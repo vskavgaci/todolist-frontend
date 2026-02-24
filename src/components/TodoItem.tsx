@@ -55,7 +55,7 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
 
   return (
     <div
-      className={`group flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow ${
+      className={`group flex items-center gap-2 sm:gap-3 p-3 sm:p-3 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow ${
         isDeleting ? 'opacity-50' : ''
       }`}
     >
@@ -64,7 +64,7 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
         checked={todo.completed}
         onChange={handleToggle}
         disabled={isDeleting}
-        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer disabled:cursor-not-allowed"
+        className="w-5 h-5 sm:w-5 sm:h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
       />
 
       {isEditing ? (
@@ -98,7 +98,7 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 px-3 py-1 text-sm font-medium transition-opacity disabled:cursor-not-allowed"
+        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-red-600 hover:text-red-700 px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium transition-opacity disabled:cursor-not-allowed flex-shrink-0"
       >
         Delete
       </button>
