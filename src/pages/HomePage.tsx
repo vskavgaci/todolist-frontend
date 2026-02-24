@@ -1,12 +1,107 @@
+import { useState } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { useAuth } from '../lib/hooks/useAuth'
 import { useTodos } from '../lib/hooks/useTodos'
 import AddTodoForm from '../components/AddTodoForm'
-import TodoItem from '../components/TodoItem'
+import SortableTodoItem from '../components/SortableTodoItem'
+import { Todo } from '../lib/todos'
 
 export default function HomePage() {
   const { session, signOut } = useAuth()
-  const { todos, isLoading, createTodo, updateTodo, deleteTodo, isCreating } =
-    useTodos()
+  const {
+    todos: serverTodos,
+    isLoading,
+    createTodo,
+    updateTodo,
+    deleteTodo,
+    reorderTodo,
+    isCreating,
+  } = useTodos()
+
+  const [localTodos, setLocalTodos] = useState<Todo[]>([])
+
+  // Use local state for optimistic drag reordering, fallback to server
+  const todos = localTodos.length > 0 ? localTodos : serverTodos
+
+  // Update local state when server state changes
+  if (serverTodos !== localTodos && localTodos.length === 0) {
+    setLocalTodos(serverTodos)
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 250ms touch before drag starts
+        tolerance: 5,
+      },
+    })
+  )
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    const oldIndex = todos.findIndex((t) => t.id === active.id)
+    const newIndex = todos.findIndex((t) => t.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    // Optimistically reorder locally
+    const reorderedTodos = arrayMove(todos, oldIndex, newIndex)
+    setLocalTodos(reorderedTodos)
+
+    // Calculate new position
+    let newPosition: number
+
+    if (newIndex === 0) {
+      // Moving to the beginning
+      newPosition = reorderedTodos[1]
+        ? reorderedTodos[1].position / 2
+        : 1024
+    } else if (newIndex === reorderedTodos.length - 1) {
+      // Moving to the end
+      newPosition = reorderedTodos[newIndex - 1].position + 1024
+    } else {
+      // Moving between two items
+      const prevPos = reorderedTodos[newIndex - 1].position
+      const nextPos = reorderedTodos[newIndex + 1].position
+      newPosition = (prevPos + nextPos) / 2
+    }
+
+    try {
+      await reorderTodo({
+        id: active.id as string,
+        position: newPosition,
+      })
+      // Clear local state to use server data
+      setLocalTodos([])
+    } catch (error) {
+      // Revert on error
+      setLocalTodos(serverTodos)
+      console.error('Reorder failed:', error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,18 +142,29 @@ export default function HomePage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {todos.map((todo) => (
-              <TodoItem
-                key={todo.id}
-                todo={todo}
-                onUpdate={async (id, data) => {
-                  await updateTodo({ id, data })
-                }}
-                onDelete={deleteTodo}
-              />
-            ))}
-          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={todos.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {todos.map((todo) => (
+                  <SortableTodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onUpdate={async (id, data) => {
+                      await updateTodo({ id, data })
+                    }}
+                    onDelete={deleteTodo}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
