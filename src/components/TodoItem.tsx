@@ -3,7 +3,7 @@ import { Todo } from '../lib/todos'
 
 interface TodoItemProps {
   todo: Todo
-  onUpdate: (id: string, title: string) => Promise<void>
+  onUpdate: (id: string, data: { title?: string; completed?: boolean }) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }
 
@@ -22,11 +22,15 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
 
   const handleSave = async () => {
     if (editTitle.trim() && editTitle !== todo.title) {
-      await onUpdate(todo.id, editTitle.trim())
+      await onUpdate(todo.id, { title: editTitle.trim() })
     } else {
       setEditTitle(todo.title)
     }
     setIsEditing(false)
+  }
+
+  const handleToggle = async () => {
+    await onUpdate(todo.id, { completed: !todo.completed })
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -55,6 +59,14 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
         isDeleting ? 'opacity-50' : ''
       }`}
     >
+      <input
+        type="checkbox"
+        checked={todo.completed}
+        onChange={handleToggle}
+        disabled={isDeleting}
+        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 cursor-pointer disabled:cursor-not-allowed"
+      />
+
       {isEditing ? (
         <input
           ref={inputRef}
@@ -71,7 +83,15 @@ export default function TodoItem({ todo, onUpdate, onDelete }: TodoItemProps) {
           className="flex-1 cursor-pointer"
           onClick={() => setIsEditing(true)}
         >
-          <p className="text-gray-900">{todo.title}</p>
+          <p
+            className={`${
+              todo.completed
+                ? 'line-through text-gray-400'
+                : 'text-gray-900'
+            }`}
+          >
+            {todo.title}
+          </p>
         </div>
       )}
 
