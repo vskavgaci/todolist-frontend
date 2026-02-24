@@ -1,7 +1,12 @@
 import { useAuth } from '../lib/hooks/useAuth'
+import { useTodos } from '../lib/hooks/useTodos'
+import AddTodoForm from '../components/AddTodoForm'
+import TodoItem from '../components/TodoItem'
 
 export default function HomePage() {
   const { session, signOut } = useAuth()
+  const { todos, isLoading, createTodo, updateTodo, deleteTodo, isCreating } =
+    useTodos()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,9 +28,38 @@ export default function HomePage() {
       </nav>
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <p className="text-gray-600">
-          Todo list functionality will be implemented in F3
-        </p>
+        <AddTodoForm onAdd={createTodo} isAdding={isCreating} />
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-16 bg-gray-200 rounded-lg animate-pulse"
+              />
+            ))}
+          </div>
+        ) : todos.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No todos yet!</p>
+            <p className="text-gray-400 text-sm mt-2">
+              Add your first todo above to get started
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {todos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                onUpdate={async (id, title) => {
+                  await updateTodo({ id, data: { title } })
+                }}
+                onDelete={deleteTodo}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
