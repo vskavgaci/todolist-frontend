@@ -105,12 +105,42 @@ export function useTodos() {
     },
   })
 
+  const reorderMutation = useMutation({
+    mutationFn: ({ id, position }: { id: string; position: number }) =>
+      todosApi.reorder(id, position),
+    onMutate: async ({ id, position }) => {
+      await queryClient.cancelQueries({ queryKey: ['todos'] })
+
+      const previousTodos = queryClient.getQueryData<Todo[]>(['todos'])
+
+      if (previousTodos) {
+        queryClient.setQueryData<Todo[]>(
+          ['todos'],
+          previousTodos.map((todo) =>
+            todo.id === id ? { ...todo, position } : todo
+          )
+        )
+      }
+
+      return { previousTodos }
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousTodos) {
+        queryClient.setQueryData(['todos'], context.previousTodos)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
+    },
+  })
+
   return {
     todos,
     isLoading,
     createTodo: createMutation.mutateAsync,
     updateTodo: updateMutation.mutateAsync,
     deleteTodo: deleteMutation.mutateAsync,
+    reorderTodo: reorderMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
