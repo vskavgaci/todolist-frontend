@@ -53,10 +53,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-center text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900">
             Create your account
           </h1>
         </div>
