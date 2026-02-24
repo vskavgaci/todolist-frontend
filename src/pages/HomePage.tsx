@@ -52,8 +52,8 @@ export default function HomePage() {
               <TodoItem
                 key={todo.id}
                 todo={todo}
-                onUpdate={async (id, title) => {
-                  await updateTodo({ id, data: { title } })
+                onUpdate={async (id, data) => {
+                  await updateTodo({ id, data })
                 }}
                 onDelete={deleteTodo}
               />
